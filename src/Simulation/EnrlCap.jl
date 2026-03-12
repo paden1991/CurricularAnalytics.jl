@@ -1,8 +1,3 @@
-using DataFrames
-using Statistics
-using PrettyTables
-using CSV
-
 function simulate_capacity_issues(simulation, enrollment_df, total_university_cohort, major_proportion; save_path=nothing)
     println("\n--- RUNNING CAPACITY RISK ANALYSIS ---")
     
@@ -15,8 +10,9 @@ function simulate_capacity_issues(simulation, enrollment_df, total_university_co
     println("Scaled simulated demand to real-world major cohort size: $(round(real_major_cohort, digits=0)) students.")
 
     # 3. Process historical data to find Average Seats per Term
-    term_counts = combine(groupby(enrollment_df, [:term, :course_prefix, :course_num]), nrow => :seats_taken)
-    avg_capacity_df = combine(groupby(term_counts, [:course_prefix, :course_num]), :seats_taken => mean => :avg_term_capacity)
+    # FIX: Grouping by the single ':course' column shown in your CSV screenshot
+    term_counts = combine(groupby(enrollment_df, [:term, :course]), nrow => :seats_taken)
+    avg_capacity_df = combine(groupby(term_counts, :course), :seats_taken => mean => :avg_term_capacity)
 
     # 4. Build the Results Table with strict typing for stability
     results = DataFrame(
@@ -31,9 +27,10 @@ function simulate_capacity_issues(simulation, enrollment_df, total_university_co
     for course in simulation.degree_plan.curriculum.courses
         p = clean_course_str(course.prefix)
         n = clean_course_str(course.num)
+        pn = p * n # This combines "MAC" and "2311" into "MAC2311" to match your dataset!
         
         # Find historical capacity for this specific course
-        cap_row = filter(row -> clean_course_str(row.course_prefix) == p && clean_course_str(row.course_num) == n, avg_capacity_df)
+        cap_row = filter(row -> clean_course_str(row.course) == pn, avg_capacity_df)
         
         if nrow(cap_row) > 0
             avg_cap = cap_row.avg_term_capacity[1]
@@ -42,12 +39,12 @@ function simulate_capacity_issues(simulation, enrollment_df, total_university_co
             peak_sim_demand = maximum(course.metadata["termenrollment"]) * scale_factor
             
             # Calculate what percentage of total university capacity this ONE major consumes
-            consumed_ratio = peak_sim_demand / avg_cap
+            consumed_ratio = avg_cap > 0 ? (peak_sim_demand / avg_cap) : 0.0
             
             # Estimate shut outs
             shut_out = max(0.0, peak_sim_demand - avg_cap)
             
-            # Text-based risk flags (Fixes terminal alignment bugs caused by emojis)
+            # Text-based risk flags
             flag = "OK"
             if consumed_ratio > 1.0
                 flag = "BOTTLENECK"
