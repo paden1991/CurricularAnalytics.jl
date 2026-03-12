@@ -68,7 +68,7 @@ function simulate_capacity_issues(simulation, enrollment_df, total_university_co
     sort!(results, :Est_Students_Shut_Out, rev=true)
     
     # Print the results to the console cleanly
-    pretty_table(results, eltypes=false, alignment=:l)
+    pretty_table(results, alignment=:l)
     
     # Export directly to CSV
     if save_path !== nothing
