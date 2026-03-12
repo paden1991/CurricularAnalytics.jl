@@ -135,10 +135,11 @@ function simulate(degree_plan::DegreePlan, course_attempt_limit::Int, students::
                         # Check if the student have reached max attempts for a course
                         attempts = student_attemps[student.id, course.metadata["id"]]
                         if attempts == course_attempt_limit
-                            push!(simulation.reach_attempts_students, student)
-                            # Student has to stopout
+                            if !(student in simulation.reach_attempts_students)
+                                push!(simulation.reach_attempts_students, student)
+                            end
                             student.stopout = true
-                        end
+                    end
                         # Increment the attempts
                         student_attemps[student.id, course.metadata["id"]] += 1
                     end
