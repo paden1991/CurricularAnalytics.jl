@@ -58,13 +58,15 @@ function simulation_report(simulation, duration, course_passrate, max_credits, r
         println("\n\n-------- Pass Rate of Each Course (computed from Student Grades CSV file) --------")
 
         frame = passrate_table(simulation)
-        show(frame, summary=false, allrows=true, allcols=true, splitcols=false, eltypes=false)
+        # FIX: Removed 'splitcols=false' to resolve MethodError
+        show(frame, summary=false, allrows=true, allcols=true, eltypes=false)
     end
 
     println("\n\n-------- Course Pass Rates by Term --------")
 
     frame = pass_table(simulation, duration)
-    show(frame, summary=false, allrows=true, allcols=true, splitcols=false, eltypes=false)
+    # FIX: Removed 'splitcols=false' to resolve MethodError
+    show(frame, summary=false, allrows=true, allcols=true, eltypes=false)
 end
 
 # Return the real passrate of courses in the simulation as a DataFrame
@@ -105,7 +107,7 @@ function pass_table(simulation, semesters=-1)
     frame = DataFrame()
 
     # Make Keys
-    frame[:COUSE] = []
+    frame[!, :COUSE] = [] # Updated syntax for modern DataFrames
     terms = simulation.duration
 
     if semesters > -1
@@ -113,23 +115,23 @@ function pass_table(simulation, semesters=-1)
     end
 
     for i=1:terms
-        frame[Symbol("TERM$(i)")] = []
+        frame[!, Symbol("TERM$(i)")] = []
     end
 
     # Populate data
     for course in simulation.degree_plan.curriculum.courses
-        row = [course.name]
+        row = Any[course.name]
         prev = 0
         for i=1:terms
             prev += course.metadata["termpassed"][i]
-            row = [row string(round((prev/simulation.num_students)*100, digits=3)) * "%"]
+            push!(row, string(round((prev/simulation.num_students)*100, digits=3)) * "%")
         end
         push!(frame, row)
     end
 
-    rates = ["GRAD RATE"]
+    rates = Any["GRAD RATE"]
     for i=1:terms
-        rates = [rates string(round(simulation.term_grad_rates[i]*100, digits=3)) * "%"]
+        push!(rates, string(round(simulation.term_grad_rates[i]*100, digits=3)) * "%")
     end
     push!(frame, rates)
 
