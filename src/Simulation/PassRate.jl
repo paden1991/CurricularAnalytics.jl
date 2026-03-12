@@ -51,14 +51,15 @@ end
 function set_passrates_from_csv(courses, csv_path, pass_rate)
     university_course_table = CSV.File(csv_path, delim = ',', silencewarnings = true) |> DataFrame
 
-    passing_grades = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "P", "S", "+", "H"]
-    all_grades = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "P", "S", "U", "W", "DR", "WI", "F0", "NC", "AU", "IN", "H", "NR", "NG"]
+    # Updated to perfectly match your institutional data strings
+    passing_grades = ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "P"]
+    all_grades = ["C+", "A", "F", "B-", "P", "B", "B+", "A-", "C", "DR", "IN", "D", "F0", "AU", "NC", "WI", "NG", "+", "C-", "NR", "H"]
 
     for course in courses
         prefix = string(strip(course.prefix))
         num = string(strip(course.num))
 
-        # Compute the number of student passed the course, and number of student took the course
+        # Compute the number of students who passed the course, and total who took it
         num_passes = nrow(filter(row -> passrate_filter(row, prefix, num, passing_grades), university_course_table))
         num_students_taken = nrow(filter(row -> passrate_filter(row, prefix, num, all_grades), university_course_table))
 
@@ -69,13 +70,23 @@ function set_passrates_from_csv(courses, csv_path, pass_rate)
                 course_passrate, num_passes, num_students_taken = get_gen_tier_I_passrate(university_course_table, ["150", "160"], passing_grades, all_grades, pass_rate)
                 course.passrate = course_passrate
             else
-                course.passrate = pass_rate                      # Hard code the rest of the course to a preset value for now
+                # Hard code the rest of the courses to the preset fallback value
+                course.passrate = pass_rate                      
             end
         else
-            course.passrate = num_passes / num_students_taken    # Computer the course pass rate
+            # Compute the actual course pass rate
+            course.passrate = num_passes / num_students_taken    
         end
-        course.metadata["num_students_taken"] = num_students_taken
-        course.metadata["num_students_passes"] = num_passes
+        
+        # --- PREVENT METADATA CRASH IN REPORT.JL ---
+        # Ensure these keys are ALWAYS assigned, even if the course wasn't in the CSV
+        if num_students_taken == 0
+             course.metadata["num_students_taken"] = "N/A"
+             course.metadata["num_students_passes"] = "N/A"
+        else
+             course.metadata["num_students_taken"] = num_students_taken
+             course.metadata["num_students_passes"] = num_passes
+        end
     end
 end
 
