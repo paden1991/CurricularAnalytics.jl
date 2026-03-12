@@ -119,7 +119,10 @@ module Enrollment
         coreqs = get_reqs(courses, course, strict_co)
 
         for coreq in coreqs
-            enrolled =  enrolled && (in(student, course.metadata["students"]) || student_progress[student.id, coreq.metadata["id"]] == 1.0)
+            # FIXED: Changed `course.metadata["students"]` to `coreq.metadata["students"]`
+            # This correctly checks if the student was successfully enrolled in the co-requisite
+            # during the current term's enrollment loop, rather than checking the target course.
+            enrolled =  enrolled && (in(student, coreq.metadata["students"]) || student_progress[student.id, coreq.metadata["id"]] == 1.0)
         end
 
         return enrolled
