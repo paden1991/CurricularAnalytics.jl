@@ -51,8 +51,8 @@ end
 function set_passrates_from_csv(courses, csv_path, pass_rate)
     university_course_table = CSV.File(csv_path, delim = ',', silencewarnings = true) |> DataFrame
 
-    passing_grades = ["A", "B", "C", "D", "P"]
-    all_grades = ["A", "B", "C", "D", "P", "W", "F", "E", "S", "WS"]
+    passing_grades = ["A","A-","A+","B","B-","B+","AU","NR","NG","C","C-","C+","P","+"]
+    all_grades = ["NR","F","P","F0","C+","IN","C","C-","NC","D","NG","B+","A","A-","DR","H","+","WI","B","B-","AU"]
 
     for course in courses
         prefix = string(strip(course.prefix))
