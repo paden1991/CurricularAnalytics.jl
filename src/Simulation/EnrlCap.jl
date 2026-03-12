@@ -1,7 +1,7 @@
 function simulate_capacity_issues(simulation, enrollment_df, total_university_cohort, major_proportion; save_path=nothing)
     println("\n--- RUNNING CAPACITY RISK ANALYSIS ---")
     
-    # 1. Self-contained helper to safely clean and match course strings
+    # 1. Self-contained helper to safely clean strings
     clean_course_str(x) = replace(uppercase(strip(string(ismissing(x) ? "" : x))), r"[^A-Z0-9]" => "")
     
     # 2. Calculate the real-world size of this specific major's cohort
@@ -9,12 +9,14 @@ function simulate_capacity_issues(simulation, enrollment_df, total_university_co
     scale_factor = real_major_cohort / simulation.num_students
     println("Scaled simulated demand to real-world major cohort size: $(round(real_major_cohort, digits=0)) students.")
 
-    # 3. Process historical data to find Average Seats per Term
-    # FIX: Grouping by the single ':course' column shown in your CSV screenshot
-    term_counts = combine(groupby(enrollment_df, [:term, :course]), nrow => :seats_taken)
-    avg_capacity_df = combine(groupby(term_counts, :course), :seats_taken => mean => :avg_term_capacity)
+    # 3. Process historical data using YOUR exact column names
+    # Step A: Sum the enrollment_cap across all sections in a single term
+    term_counts = combine(groupby(enrollment_df, [:term, :course_prefix, :course_number]), :enrollment_cap => sum => :term_total_cap)
+    
+    # Step B: Average those term totals across all historical terms
+    avg_capacity_df = combine(groupby(term_counts, [:course_prefix, :course_number]), :term_total_cap => mean => :avg_term_capacity)
 
-    # 4. Build the Results Table with strict typing for stability
+    # 4. Build the Results Table
     results = DataFrame(
         Course = String[],
         Avg_Historical_Capacity = Float64[],
@@ -27,15 +29,14 @@ function simulate_capacity_issues(simulation, enrollment_df, total_university_co
     for course in simulation.degree_plan.curriculum.courses
         p = clean_course_str(course.prefix)
         n = clean_course_str(course.num)
-        pn = p * n # This combines "MAC" and "2311" into "MAC2311" to match your dataset!
         
-        # Find historical capacity for this specific course
-        cap_row = filter(row -> clean_course_str(row.course) == pn, avg_capacity_df)
+        # Match using the two split columns directly
+        cap_row = filter(row -> clean_course_str(row.course_prefix) == p && clean_course_str(row.course_number) == n, avg_capacity_df)
         
         if nrow(cap_row) > 0
             avg_cap = cap_row.avg_term_capacity[1]
             
-            # Find the maximum demand this major places on the course in ANY single term
+            # Find the maximum demand this major places on the course in ANY single simulated term
             peak_sim_demand = maximum(course.metadata["termenrollment"]) * scale_factor
             
             # Calculate what percentage of total university capacity this ONE major consumes
@@ -69,7 +70,7 @@ function simulate_capacity_issues(simulation, enrollment_df, total_university_co
     # Print the results to the console cleanly
     pretty_table(results, eltypes=false, alignment=:l)
     
-    # Optional: Export directly to CSV for Institutional Research reporting
+    # Export directly to CSV
     if save_path !== nothing
         CSV.write(save_path, results)
         println("\nReport successfully saved to: $save_path")
