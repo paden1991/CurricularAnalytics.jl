@@ -6,42 +6,54 @@ Grade = UInt64
 
 # function for converting a letter grade into a integer, divide by 3 to convert to 4-point GPA scale 
 function grade(letter_grade::AbstractString)
-    if letter_grade == "A➕"
+    if letter_grade == "A+"
         return convert(Grade, 13) 
     elseif letter_grade == "A"
         return convert(Grade, 12) 
-    elseif letter_grade == "A➖"
+    elseif letter_grade == "A-"
         return convert(Grade, 11) 
-    elseif letter_grade == "B➕"
+    elseif letter_grade == "B+"
         return convert(Grade, 10) 
     elseif letter_grade == "B"
         return convert(Grade, 9) 
-    elseif letter_grade == "B➖"
+    elseif letter_grade == "B-"
         return convert(Grade, 8) 
-    elseif letter_grade == "C➕"
+    elseif letter_grade == "C+"
         return convert(Grade, 7) 
     elseif letter_grade == "C"
         return convert(Grade, 6) 
-    elseif letter_grade == "C➖"
+    elseif letter_grade == "C-"
         return convert(Grade, 5) 
-    elseif letter_grade == "D➕"
+    elseif letter_grade == "D+"
         return convert(Grade, 4) 
     elseif letter_grade == "D"
         return convert(Grade, 3) 
-    elseif letter_grade == "D➖"
+    elseif letter_grade == "D-"
         return convert(Grade, 2) 
     elseif letter_grade == "P"
         return convert(Grade, 0) 
     elseif letter_grade == "F"
         return convert(Grade, 0)  
-    elseif letter_grade == "I" 
+    elseif letter_grade == "DR" 
         return convert(Grade, 0)  
-    elseif letter_grade == "WP" 
+    elseif letter_grade == "WI" 
         return convert(Grade, 0)  
-    elseif letter_grade == "W" 
+    elseif letter_grade == "F0" 
         return convert(Grade, 0)  
-    elseif letter_grade == "WF" 
+    elseif letter_grade == "NC" 
         return convert(Grade, 0)  
+    elseif letter_grade == "AU" 
+        return convert(Grade, 0)
+    elseif letter_grade == "+" 
+        return convert(Grade, 0)  
+    elseif letter_grade == "IN" 
+        return convert(Grade, 0)
+    elseif letter_grade == "H" 
+        return convert(Grade, 0)  
+    elseif letter_grade == "NR" 
+        return convert(Grade, 0)
+    elseif letter_grade == "NG" 
+        return convert(Grade, 0)
     else
         error("letter grade $letter_grade is not supported")  
     end
@@ -50,30 +62,33 @@ end
 # function for converting an integer letter grade, divide by 3 to convert to 4-point GPA scale 
 function grade(int_grade::Grade)
     if int_grade == 13
-        return "A➕" 
+        return "A+" 
     elseif int_grade == 12
         return "A"
     elseif int_grade == 11
-        return "A➖" 
+        return "A-" 
     elseif int_grade == 10
-        return "B➕" 
+        return "B+" 
     elseif int_grade == 9
         return "B" 
     elseif int_grade == 8
-        return "B➖"
+        return "B-"
     elseif int_grade == 7
-        return "C➕" 
+        return "C+" 
     elseif int_grade == 6
         return "C" 
     elseif int_grade == 5
-        return "C➖" 
+        return "C-" 
     elseif int_grade == 4
-        return "D➕" 
+        return "D+" 
     elseif int_grade == 3
         return "D" 
     elseif int_grade == 2
-        return "D➖" 
+        return "D-" 
     elseif int_grade == 0
+        # Note: 0 represents multiple marks in the forward function 
+        # (P, F, DR, WI, F0, NC, AU, +, IN, H, NR, NG). 
+        # "F" is the default return for GPA scaling purposes.
         return "F" 
     else
         error("grade value $int_grade is not supported")    
